@@ -24,7 +24,7 @@ class Player:
         if self.x > 0:  # Verifica se o jogador não está na borda esquerda da matriz
             boxLeft = False  # Inicializa a variável para verificar a presença de uma caixa à esquerda
             for box in boxes:  # Itera sobre todas as caixas
-                if self.x - 1 == box.x and self.y == box.y:  # Verifica se há uma caixa diretamente à esquerda
+                if self.x - 1 == box.x and self.y > box.y - 1 and self.y <= box.y:  # Verifica se há uma caixa diretamente à esquerda
                     boxLeft = box  # Armazena a caixa à esquerda
             if not boxLeft:  # Se não houver caixa à esquerda
                 self.x -= 1  # Move o jogador uma posição para a esquerda
@@ -45,7 +45,7 @@ class Player:
         if self.x < self.matrix_size - 1:  # Verifica se o jogador não está na borda direita da matriz
             boxRight = False  # Inicializa a variável para verificar a presença de uma caixa à direita
             for box in boxes:  # Itera sobre todas as caixas
-                if self.x + 1 == box.x and self.y == box.y:  # Verifica se há uma caixa diretamente à direita
+                if self.x + 1 == box.x and self.y > box.y - 1 and self.y <= box.y :  # Verifica se há uma caixa diretamente à direita
                     boxRight = box  # Armazena a caixa à direita
             if not boxRight:  # Se não houver caixa à direita
                 self.x += 1  # Move o jogador uma posição para a direita
@@ -63,9 +63,9 @@ class Player:
 
     def jump(self, height):
         prev_y = self.y  # Guarda a posição y anterior do jogador
-        print(prev_y)  # Imprime a posição y anterior do jogador
+        #print(prev_y)  # Imprime a posição y anterior do jogador
         self.y -= height  # Ajusta a posição vertical do jogador
         if self.y < 0:  # Verifica se o jogador está abaixo do chão
             self.y = 0  # Impede que o jogador desça abaixo do chão
-        if prev_y != self.y:  # Se a posição do jogador mudou
-            print(f"Jumping with height {height}, Player Y position: {self.y}")  # Imprime a nova posição y do jogador
+        #if prev_y != self.y:  # Se a posição do jogador mudou
+        #    print(f"Jumping with height {height}, Player Y position: {self.y}")  # Imprime a nova posição y do jogador

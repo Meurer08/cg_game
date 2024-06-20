@@ -17,8 +17,8 @@ class Game:
         self.matrix_size = 10  # Define o tamanho da matriz
         self.cell_size = screen_height // self.matrix_size  # Calcula o tamanho da célula com base na altura da tela
         # Inicializa a lista de caixas com duas caixas em posições específicas
-        self.boxes = [Box(self.matrix_size - 2, self.matrix_size - 1, self.cell_size),
-                      Box(self.matrix_size - 7, self.matrix_size - 1, self.cell_size)]
+        self.boxes = [Box(self.matrix_size - 6, self.matrix_size - 1, self.cell_size),
+                      Box(self.matrix_size - 6, self.matrix_size - 2, self.cell_size)]
         self.player = Player(self.matrix_size, self.cell_size)  # Cria uma instância do jogador
         self.clock = pygame.time.Clock()  # Cria um objeto de relógio para controlar a taxa de atualização do jogo
         self.is_jumping = False  # Indica se o jogador está pulando
@@ -61,7 +61,7 @@ class Game:
         if self.player.y >= 9:  # Verifica se o jogador está no chão
             return False
         else:
-            print(self.matrix[int(self.player.y + 1)][self.player.x])  # Imprime o estado da célula abaixo do jogador
+            #print(self.matrix[int(self.player.y + 1)][self.player.x])  # Imprime o estado da célula abaixo do jogador
             if (self.matrix[int(self.player.y + 1)][self.player.x] == BOX):  # Verifica se há uma caixa abaixo do jogador
                 self.is_jumping = False  # Para o pulo do jogador
                 self.jump_peak_reached = False  # Reseta o pico do pulo
@@ -105,7 +105,6 @@ class Game:
                         self.player.y = self.player.ground_y  # Garante que o jogador não passe do chão
                         self.player.jump_offset = 0  # Reseta o pulo
 
-            self.update_boxes()  # Atualiza a queda das caixas
             self.clear_complete_lines()  # Limpa as linhas completas
 
             box_timer += 1  # Incrementa o temporizador
@@ -116,9 +115,10 @@ class Game:
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)  # Limpa o buffer de cor e profundidade
             draw_matrix(self.matrix_size, self.cell_size)  # Desenha a matriz
             self.detect_collision()  # Detecta colisões
-            self.matrixRender()  # Renderiza a matriz
             self.player.draw()  # Desenha o jogador
 
+            self.matrixRender()  # Renderiza a matriz
+            self.update_boxes()  # Atualiza a queda das caixas
             pygame.display.flip()  # Atualiza a tela
             self.clock.tick(60)  # Limita a taxa de quadros para 60 FPS
 
