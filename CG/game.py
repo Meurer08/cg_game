@@ -61,11 +61,17 @@ class Game:
         if self.player.y >= 9:  # Verifica se o jogador está no chão
             return False
         else:
+            resto = self.player.y % 1
+            playery = self.player.y - resto
             #print(self.matrix[int(self.player.y + 1)][self.player.x])  # Imprime o estado da célula abaixo do jogador
-            if (self.matrix[int(self.player.y + 1)][self.player.x] == BOX):  # Verifica se há uma caixa abaixo do jogador
+            if (self.matrix[int(playery + 1)][self.player.x] == BOX and self.is_jumping):  # Verifica se há uma caixa abaixo do jogador
+                #print(self.player.y, self.player.x)
                 self.is_jumping = False  # Para o pulo do jogador
                 self.jump_peak_reached = False  # Reseta o pico do pulo
-                self.player.y = self.boxes[0].y - 1  # Coloca o jogador em cima da caixa
+                self.player.y = playery  # Coloca o jogador em cima da caixa
+
+    #detect_collision_top_box(self, future_y):
+
 
     def run(self):
         self.init_gl()  # Inicializa a configuração do OpenGL
@@ -99,6 +105,7 @@ class Game:
                     if self.jump_velocity <= 0:
                         self.jump_peak_reached = True
                 else:
+                    #boxUnder = detect_collision_top_box(future_y)
                     self.player.jump(-self.gravity)  # Desce com a gravidade
                     if self.player.y >= self.player.ground_y:
                         self.is_jumping = False
@@ -114,10 +121,10 @@ class Game:
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)  # Limpa o buffer de cor e profundidade
             draw_matrix(self.matrix_size, self.cell_size)  # Desenha a matriz
-            self.detect_collision()  # Detecta colisões
             self.player.draw()  # Desenha o jogador
 
             self.matrixRender()  # Renderiza a matriz
+            self.detect_collision()  # Detecta colisões
             self.update_boxes()  # Atualiza a queda das caixas
             pygame.display.flip()  # Atualiza a tela
             self.clock.tick(60)  # Limita a taxa de quadros para 60 FPS
@@ -136,6 +143,8 @@ class Game:
 
     def remove_line(self, y):
         self.boxes = [box for box in self.boxes if box.y != y]  # Remove todas as caixas na linha y
+        self.is_jumping = True
+        self.jump_peak_reached = True
 
     def move_boxes_down(self, y):
         for box in self.boxes:

@@ -31,7 +31,7 @@ class Player:
             else:  # Se houver uma caixa à esquerda
                 mover = True  # Inicializa a variável para verificar se a caixa pode se mover
                 for box in boxes:  # Itera sobre todas as caixas
-                    if boxLeft.x == box.x + 1 and boxLeft.y == box.y:  # Verifica se há uma caixa à direita da caixa à esquerda
+                    if (boxLeft.x == box.x + 1 and boxLeft.y == box.y) or (boxLeft.y == box.y + 1 and boxLeft.x == box.x):  # Verifica se há uma caixa à direita da caixa à esquerda
                         mover = False  # Define que a caixa não pode se mover
                 if mover:  # Se a caixa pode se mover
                     if boxLeft.x > 0 and not (boxLeft.x - 1 == self.x - 1 and boxLeft.y == self.y):  # Verifica se a caixa não está na borda esquerda e não há colisão
@@ -52,7 +52,7 @@ class Player:
             else:  # Se houver uma caixa à direita
                 mover = True  # Inicializa a variável para verificar se a caixa pode se mover
                 for box in boxes:  # Itera sobre todas as caixas
-                    if boxRight.x == box.x - 1 and boxRight.y == box.y:  # Verifica se há uma caixa à esquerda da caixa à direita
+                    if (boxRight.x == box.x - 1 and boxRight.y == box.y) or (boxRight.y == box.y + 1 and boxRight.x == box.x):  # Verifica se há uma caixa à esquerda da caixa à direita
                         mover = False  # Define que a caixa não pode se mover
                 if mover:  # Se a caixa pode se mover
                     if boxRight.x < self.matrix_size - 1 and not (boxRight.x + 1 == self.x + 1 and boxRight.y == self.y):  # Verifica se a caixa não está na borda direita e não há colisão
