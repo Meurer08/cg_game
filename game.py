@@ -1,9 +1,9 @@
-import pygame  # Importa a biblioteca pygame para gerenciamento de eventos e gráficos
-import random  # Importa a biblioteca random para geração de números aleatórios
-from OpenGL.GL import *  # Importa todas as funções da biblioteca OpenGL
-from player import Player  # Importa a classe Player do arquivo player.py
-from box import Box  # Importa a classe Box do arquivo box.py
-from utils import draw_matrix  # Importa a função draw_matrix do arquivo utils.py
+import pygame
+import random
+from OpenGL.GL import *
+from player import Player
+from box import Box
+from utils import draw_matrix
 
 # Definição de constantes para representar diferentes estados na matriz
 EMPTY = 0
@@ -12,141 +12,225 @@ PLAYER = 2
 
 class Game:
     def __init__(self, screen_width, screen_height):
-        self.screen_width = screen_width  # Armazena a largura da tela
-        self.screen_height = screen_height  # Armazena a altura da tela
-        self.matrix_size = 10  # Define o tamanho da matriz
-        self.cell_size = screen_height // self.matrix_size  # Calcula o tamanho da célula com base na altura da tela
-        # Inicializa a lista de caixas com duas caixas em posições específicas
-        self.boxes = [Box(self.matrix_size - 6, self.matrix_size - 1, self.cell_size),
-                      Box(self.matrix_size - 6, self.matrix_size - 2, self.cell_size)]
-        self.player = Player(self.matrix_size, self.cell_size)  # Cria uma instância do jogador
-        self.clock = pygame.time.Clock()  # Cria um objeto de relógio para controlar a taxa de atualização do jogo
-        self.is_jumping = False  # Indica se o jogador está pulando
-        self.jump_velocity = 0.4  # Define a velocidade inicial do pulo
-        self.gravity = 0.05  # Define a gravidade aplicada ao jogador
-        self.jump_peak_reached = False  # Indica se o pico do pulo foi alcançado
-        self.matrix = []  # Inicializa a matriz de controle de blocos
+        self.screen_width = screen_width
+        self.screen_height = screen_height
+        pygame.display.set_mode((self.screen_width, self.screen_height), pygame.OPENGL | pygame.DOUBLEBUF)
+        self.matrix_size = 10
+        self.cell_size = screen_height // self.matrix_size
+        self.boxes = []
+        self.player = Player(self.matrix_size, self.cell_size)
+        self.clock = pygame.time.Clock()
+        self.is_jumping = False
+        self.jump_velocity = 0.4
+        self.gravity = 0.05
+        self.jump_peak_reached = False
+        self.matrix = []
+        self.game_over = False
+        self.box_drop_interval = 500
+        self.box_drop_timer = pygame.time.get_ticks()
+        pygame.font.init()
+        self.font = pygame.font.SysFont('Arial', 50)
+        self.menu_font = pygame.font.SysFont('Arial', 40)
+        self.selected_option = 0
+        self.menu_options = ["Iniciar", "Sair"]
+        print(f"Janela criada com dimensões: {self.screen_width}x{self.screen_height}")
 
     def generate_random_box(self):
-        x = random.randint(0, self.matrix_size - 1)  # Gera uma posição X aleatória no topo da matriz
-        y = 0  # A posição Y é sempre 0, pois a caixa cai do topo
-        new_box = Box(x, y, self.cell_size)  # Cria uma nova caixa
-        self.boxes.append(new_box)  # Adiciona a nova caixa à lista de caixas
+        x = random.randint(0, self.matrix_size - 1)
+        y = 0
+        new_box = Box(x, y, self.cell_size)
+        self.boxes.append(new_box)
 
     def update_boxes(self):
-        for box in self.boxes:
-            if box.y < self.matrix_size - 1 and self.matrix[box.y + 1][box.x] != BOX:  # Verifica se a caixa pode se mover para baixo
-                box.y += 1  # Move a caixa para baixo
+        current_time = pygame.time.get_ticks()
+        if current_time - self.box_drop_timer > self.box_drop_interval:
+            for box in self.boxes:
+                if box.y < self.matrix_size - 1 and self.matrix[box.y + 1][box.x] != BOX:
+                    if not (box.x == self.player.x and box.y + 1 == int(self.player.y)):
+                        box.y += 1
+                    else:
+                        self.game_over = True
+            self.box_drop_timer = current_time
 
     def matrixRender(self):
-        self.matrix = [[EMPTY for _ in range(self.matrix_size)] for _ in range(self.matrix_size)]  # Inicializa a matriz com valores EMPTY
+        self.matrix = [[EMPTY for _ in range(self.matrix_size)] for _ in range(self.matrix_size)]
 
         for i in self.boxes:
-            self.matrix[i.y][i.x] = BOX  # Marca a posição das caixas na matriz
-            i.draw()  # Desenha as caixas
+            self.matrix[i.y][i.x] = BOX
+            i.draw()
         aux = self.player.y
 
-        self.matrix[int(aux)][self.player.x] = PLAYER  # Marca a posição do jogador na matriz
+        self.matrix[int(aux)][self.player.x] = PLAYER
 
     def init_gl(self):
-        glViewport(0, 0, self.screen_width, self.screen_height)  # Define a área de visualização do OpenGL
-        glMatrixMode(GL_PROJECTION)  # Define a matriz de projeção
-        glLoadIdentity()  # Reseta a matriz de projeção
-        glOrtho(0, self.screen_width, self.screen_height, 0, -1, 1)  # Define uma projeção ortográfica
-        glMatrixMode(GL_MODELVIEW)  # Define a matriz de visualização do modelo
-        glLoadIdentity()  # Reseta a matriz de visualização do modelo
-        glClearColor(0.0, 0.0, 0.0, 1.0)  # Define a cor de fundo da tela
+        glViewport(0, 0, self.screen_width, self.screen_height)
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        glOrtho(0, self.screen_width, self.screen_height, 0, -1, 1)
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+        glClearColor(0.0, 0.0, 0.0, 1.0)
 
     def detect_collision(self):
-        if self.player.y >= 9:  # Verifica se o jogador está no chão
+        for box in self.boxes:
+            if box.x == self.player.x and box.y == int(self.player.y):
+                print("Colisão detectada")
+                self.game_over = True
+
+        if self.player.y >= 9:
             return False
         else:
             resto = self.player.y % 1
             playery = self.player.y - resto
-            #print(self.matrix[int(self.player.y + 1)][self.player.x])  # Imprime o estado da célula abaixo do jogador
-            if (self.matrix[int(playery + 1)][self.player.x] == BOX and self.is_jumping):  # Verifica se há uma caixa abaixo do jogador
-                #print(self.player.y, self.player.x)
-                self.is_jumping = False  # Para o pulo do jogador
-                self.jump_peak_reached = False  # Reseta o pico do pulo
-                self.player.y = playery  # Coloca o jogador em cima da caixa
+            if (self.matrix[int(playery + 1)][self.player.x] == BOX and self.is_jumping):
+                self.is_jumping = False
+                self.jump_peak_reached = False
+                self.player.y = playery
 
-    #detect_collision_top_box(self, future_y):
+    def show_game_over(self):
+        print("Chamando show_game_over.")
+        pygame.display.set_mode((self.screen_width, self.screen_height))
+        pygame_surface = pygame.display.get_surface()
+        pygame_surface.fill((0, 0, 0))
+        text_surface = self.font.render('Game Over', True, (255, 0, 0))
+        text_rect = text_surface.get_rect(center=(self.screen_width // 2, self.screen_height // 2))
+        pygame_surface.blit(text_surface, text_rect)
 
+        continue_surface = self.menu_font.render('Pressione Enter para voltar ao menu', True, (255, 255, 255))
+        continue_rect = continue_surface.get_rect(center=(self.screen_width // 2, self.screen_height // 2 + 50))
+        pygame_surface.blit(continue_surface, continue_rect)
+
+        pygame.display.flip()
+        print(f"Texto 'Game Over' desenhado na posição: {text_rect.topleft}")
+
+        waiting = True
+        while waiting:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN):
+                    waiting = False
+
+    def show_menu(self):
+        pygame.display.set_mode((self.screen_width, self.screen_height))
+        pygame_surface = pygame.display.get_surface()
+        pygame_surface.fill((0, 0, 0))
+
+        title_surface = self.font.render('Menu', True, (255, 255, 255))
+        title_rect = title_surface.get_rect(center=(self.screen_width // 2, self.screen_height // 4))
+        pygame_surface.blit(title_surface, title_rect)
+
+        for i, option in enumerate(self.menu_options):
+            color = (255, 255, 255) if i != self.selected_option else (255, 0, 0)
+            option_surface = self.menu_font.render(option, True, color)
+            option_rect = option_surface.get_rect(center=(self.screen_width // 2, self.screen_height // 2 + i * 50))
+            pygame_surface.blit(option_surface, option_rect)
+
+        pygame.display.flip()
+
+        waiting = True
+        while waiting:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_UP:
+                        self.selected_option = (self.selected_option - 1) % len(self.menu_options)
+                        self.show_menu()
+                    elif event.key == pygame.K_DOWN:
+                        self.selected_option = (self.selected_option + 1) % len(self.menu_options)
+                        self.show_menu()
+                    elif event.key == pygame.K_RETURN:
+                        if self.selected_option == 0:  # Iniciar
+                            waiting = False
+                        elif self.selected_option == 1:  # Sair
+                            pygame.quit()
+                            exit()
 
     def run(self):
-        self.init_gl()  # Inicializa a configuração do OpenGL
-        box_timer = 0  # Inicializa o temporizador para gerar novas caixas
+        self.show_menu()
+        pygame.display.set_mode((self.screen_width, self.screen_height), pygame.OPENGL | pygame.DOUBLEBUF)
+        self.init_gl()
+        self.boxes = []
+        self.player = Player(self.matrix_size, self.cell_size)
+        self.game_over = False
+
+        box_timer = 0
         while True:
-            for event in pygame.event.get():  # Lida com eventos do Pygame
+            for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    pygame.quit()  # Encerra o Pygame
+                    pygame.quit()
                     return
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_LEFT:
-                        self.player.move_left(self.boxes)  # Move o jogador para a esquerda
+                        self.player.move_left(self.boxes)
                         self.is_jumping = True
-                        self.jump_velocity = 0.4  # Reinicia a velocidade do pulo
+                        self.jump_velocity = 0.4
                         self.jump_peak_reached = True
                     elif event.key == pygame.K_RIGHT:
-                        self.player.move_right(self.boxes)  # Move o jogador para a direita
+                        self.player.move_right(self.boxes)
                         self.is_jumping = True
-                        self.jump_velocity = 0.4  # Reinicia a velocidade do pulo
+                        self.jump_velocity = 0.4
                         self.jump_peak_reached = True
                     elif event.key == pygame.K_SPACE and not self.is_jumping:
                         self.is_jumping = True
-                        self.jump_velocity = 0.4  # Reinicia a velocidade do pulo
+                        self.jump_velocity = 0.4
                         self.jump_peak_reached = False
 
             if self.is_jumping:
                 future_y = self.player.y - self.jump_velocity if not self.jump_peak_reached else self.player.y + self.gravity
                 if not self.jump_peak_reached:
-                    self.player.jump(self.jump_velocity)  # Pula com a velocidade atual
-                    self.jump_velocity -= self.gravity  # Aplica a gravidade
+                    self.player.jump(self.jump_velocity)
+                    self.jump_velocity -= self.gravity
                     if self.jump_velocity <= 0:
                         self.jump_peak_reached = True
                 else:
-                    #boxUnder = detect_collision_top_box(future_y)
-                    self.player.jump(-self.gravity)  # Desce com a gravidade
+                    self.player.jump(-self.gravity)
                     if self.player.y >= self.player.ground_y:
                         self.is_jumping = False
-                        self.player.y = self.player.ground_y  # Garante que o jogador não passe do chão
-                        self.player.jump_offset = 0  # Reseta o pulo
+                        self.player.y = self.player.ground_y
+                        self.player.jump_offset = 0
 
-            self.clear_complete_lines()  # Limpa as linhas completas
+            self.clear_complete_lines()
 
-            box_timer += 1  # Incrementa o temporizador
-            if box_timer >= 120:  # Gera uma nova caixa a cada intervalo de tempo
+            box_timer += 1
+            if box_timer >= 120:
                 self.generate_random_box()
                 box_timer = 0
 
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)  # Limpa o buffer de cor e profundidade
-            draw_matrix(self.matrix_size, self.cell_size)  # Desenha a matriz
-            self.player.draw()  # Desenha o jogador
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+            draw_matrix(self.matrix_size, self.cell_size)
+            self.player.draw()
 
-            self.matrixRender()  # Renderiza a matriz
-            self.detect_collision()  # Detecta colisões
-            self.update_boxes()  # Atualiza a queda das caixas
-            pygame.display.flip()  # Atualiza a tela
-            self.clock.tick(60)  # Limita a taxa de quadros para 60 FPS
+            self.matrixRender()
+            self.detect_collision()
+            if self.game_over:
+                print("Game Over no loop")
+                self.show_game_over()
+                self.show_menu()
+                self.run()
+                return
+            self.update_boxes()
+            pygame.display.flip()
+            self.clock.tick(60)
 
     def clear_complete_lines(self):
-        max_y = max(box.y for box in self.boxes) if self.boxes else 0  # Determina o y máximo (altura da matriz)
+        max_y = max(box.y for box in self.boxes) if self.boxes else 0
 
-        for y in range(max_y + 1):  # Verifica cada linha até o y máximo
-            if self.is_line_complete(y):  # Se a linha estiver completa
-                self.remove_line(y)  # Remove a linha
-                self.move_boxes_down(y)  # Move as caixas acima da linha para baixo
+        for y in range(max_y + 1):
+            if self.is_line_complete(y):
+                self.remove_line(y)
+                self.move_boxes_down(y)
 
     def is_line_complete(self, y):
-        line_boxes = [box for box in self.boxes if box.y == y]  # Obtém todas as caixas na linha y
-        return len(line_boxes) == self.matrix_size  # Verifica se a linha está completa
+        line_boxes = [box for box in self.boxes if box.y == y]
+        return len(line_boxes) == self.matrix_size
 
     def remove_line(self, y):
-        self.boxes = [box for box in self.boxes if box.y != y]  # Remove todas as caixas na linha y
+        self.boxes = [box for box in self.boxes if box.y != y]
         self.is_jumping = True
         self.jump_peak_reached = True
 
     def move_boxes_down(self, y):
         for box in self.boxes:
-            if box.y < y:  # Para cada caixa acima da linha y
-                box.y += 1  # Move a caixa uma posição para baixo
+            if box.y < y:
+                box.y += 1

@@ -37,8 +37,6 @@ class Player:
                     if boxLeft.x > 0 and not (boxLeft.x - 1 == self.x - 1 and boxLeft.y == self.y):  # Verifica se a caixa não está na borda esquerda e não há colisão
                         boxLeft.x -= 1  # Move a caixa uma posição para a esquerda
                         self.x -= 1  # Move o jogador uma posição para a esquerda
-        if prev_x != self.x:  # Se a posição do jogador mudou
-            print(f"Moved left: Player({self.x}, {self.y}), Box({box.x}, {box.y})")  # Imprime a nova posição do jogador e da caixa
 
     def move_right(self, boxes):
         prev_x = self.x  # Guarda a posição x anterior do jogador
@@ -58,14 +56,9 @@ class Player:
                     if boxRight.x < self.matrix_size - 1 and not (boxRight.x + 1 == self.x + 1 and boxRight.y == self.y):  # Verifica se a caixa não está na borda direita e não há colisão
                         boxRight.x += 1  # Move a caixa uma posição para a direita
                         self.x += 1  # Move o jogador uma posição para a direita
-        if prev_x != self.x:  # Se a posição do jogador mudou
-            print(f"Moved right: Player({self.x}, {self.y}), Box({box.x}, {box.y})")  # Imprime a nova posição do jogador e da caixa
 
     def jump(self, height):
         prev_y = self.y  # Guarda a posição y anterior do jogador
-        #print(prev_y)  # Imprime a posição y anterior do jogador
         self.y -= height  # Ajusta a posição vertical do jogador
         if self.y < 0:  # Verifica se o jogador está abaixo do chão
             self.y = 0  # Impede que o jogador desça abaixo do chão
-        #if prev_y != self.y:  # Se a posição do jogador mudou
-        #    print(f"Jumping with height {height}, Player Y position: {self.y}")  # Imprime a nova posição y do jogador
